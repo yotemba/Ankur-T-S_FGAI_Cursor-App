@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Check — Wellness Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --background: #0a0a0a; --foreground: #fafafa; --muted: #a1a1aa; --muted-foreground: #71717a;
+      --border: #27272a; --input: #27272a; --ring: #a78bfa; --primary: #8b5cf6; --primary-foreground: #ffffff;
+      --secondary: #27272a; --card: #18181b; --destructive: #ef4444; --radius: 0.5rem; --radius-lg: 0.75rem;
+    }
+
+    body { font-family: 'Inter', sans-serif; min-height: 100vh; background: var(--background); color: var(--foreground); overflow-x: hidden; }
+
+    .view { display: none; min-height: 100vh; padding: 24px; }
+    .view.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    .auth-card, .container { max-width: 420px; width: 100%; }
+
+    .landing-hero { text-align: center; margin-bottom: 40px; }
+    .landing-hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .landing-hero p { color: var(--muted); font-size: 0.95rem; }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; }
+    .btn { width: 100%; padding: 12px 24px; font-family: inherit; font-size: 0.95rem; font-weight: 500; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: var(--secondary); color: var(--foreground); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #3f3f46; }
+    .btn-ghost { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { color: var(--foreground); }
+
+    .auth-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; }
+    .auth-card h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+    .auth-card .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 24px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; font-size: 0.95rem; background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--foreground); }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--ring); }
+    .form-group input::placeholder { color: var(--muted-foreground); }
+    .link { color: var(--primary); font-size: 0.875rem; cursor: pointer; text-decoration: none; }
+    .link:hover { text-decoration: underline; }
+    .form-footer { margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; }
+    .checkbox-group input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+    .onboarding { max-width: 400px; text-align: center; }
+    .onboarding-slide { display: none; }
+    .onboarding-slide.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .onboarding-slide .emoji { font-size: 4rem; margin-bottom: 20px; }
+    .onboarding-slide h3 { font-size: 1.25rem; margin-bottom: 12px; }
+    .onboarding-slide p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 24px; }
+    .carousel-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
+    .carousel-dot.active { background: var(--primary); width: 24px; }
+    .carousel-nav { display: flex; gap: 12px; justify-content: center; }
+
+    /* ===== SPLASH / LOADING ===== */
+    .splash { flex-direction: column; gap: 24px; }
+    .splash h1 { font-size: 2rem; }
+    .splash .loader { width: 200px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .splash .loader-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.1s; }
+    .splash .status { font-size: 0.85rem; color: var(--muted); }
+
+    /* ===== EMAIL VERIFY ===== */
+    .verify-card { text-align: center; }
+    .verify-card .icon { font-size: 4rem; margin-bottom: 16px; }
+    .verify-card .code-input { display: flex; gap: 8px; justify-content: center; margin: 20px 0; }
+    .verify-card .code-input input { width: 48px; height: 56px; text-align: center; font-size: 1.5rem; }
+
+    /* ===== PROFILE SETUP ===== */
+    .avatar-grid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+    .avatar-opt { width: 56px; height: 56px; border-radius: 50%; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--border); }
+    .avatar-opt.selected { border-color: var(--primary); }
+    .avatar-opt:hover { border-color: var(--muted); }
+
+    /* ===== MAIN APP - SCROLLABLE LAYOUT ===== */
+    #view-app { display: none; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 0; overflow-y: auto; }
+    #view-app.active { display: flex; }
+
+    .app-wrapper { max-width: 600px; margin: 0 auto; width: 100%; padding: 16px 24px 120px; }
+
+    .app-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--background); z-index: 100; }
+    .app-nav h1 { font-size: 1.2rem; font-weight: 700; }
+    .nav-btns { display: flex; gap: 8px; align-items: center; }
+    .icon-btn { width: 36px; height: 36px; border-radius: var(--radius); background: var(--secondary); border: 1px solid var(--border); color: var(--foreground); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+    .icon-btn:hover { background: #3f3f46; }
+    .logout-btn { padding: 6px 12px; font-size: 0.8rem; background: transparent; border: 1px solid var(--destructive); color: var(--destructive); border-radius: var(--radius); cursor: pointer; }
+    .logout-btn:hover { background: rgba(239, 68, 68, 0.1); }
+
+    /* ===== ADS ===== */
+    .ad-banner { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin: 16px 0; display: flex; align-items: center; gap: 16px; }
+    .ad-banner .ad-badge { background: #fbbf24; color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+    .ad-banner .ad-text { flex: 1; }
+    .ad-banner .ad-text strong { font-size: 0.95rem; }
+    .ad-banner .ad-text span { font-size: 0.8rem; color: var(--muted); }
+    .ad-banner .ad-cta { padding: 8px 16px; font-size: 0.8rem; background: #fbbf24; color: #000; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 600; }
+
+    .ad-sidebar { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin: 16px 0; }
+    .ad-sidebar .ad-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .ad-sidebar .ad-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+    .ad-sidebar .ad-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+    .ad-sidebar .ad-btn { width: 100%; padding: 8px; font-size: 0.85rem; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer; }
+
+    /* ===== AI ASSISTANT ===== */
+    .ai-fab { position: fixed; bottom: 100px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #6366f1); color: white; border: none; cursor: pointer; font-size: 1.5rem; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); z-index: 900; }
+    .ai-fab:hover { transform: scale(1.05); }
+    .ai-panel { position: fixed; bottom: 170px; right: 24px; width: 340px; max-height: 400px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 901; display: none; flex-direction: column; overflow: hidden; }
+    .ai-panel.open { display: flex; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .ai-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .ai-panel-header .ai-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), #6366f1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .ai-panel-header .ai-info { flex: 1; }
+    .ai-panel-header .ai-name { font-weight: 600; font-size: 0.95rem; }
+    .ai-panel-header .ai-status { font-size: 0.75rem; color: #34d399; }
+    .ai-panel-header .ai-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; }
+    .ai-chat { flex: 1; overflow-y: auto; padding: 16px; max-height: 280px; }
+    .ai-msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; max-width: 90%; }
+    .ai-msg.user { background: var(--primary); color: white; margin-left: auto; }
+    .ai-msg.bot { background: var(--secondary); border: 1px solid var(--border); }
+    .ai-msg .typing { display: flex; gap: 4px; }
+    .ai-msg .typing span { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; animation: typing 1.4s infinite; }
+    .ai-msg .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-msg .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%, 60% { opacity: 0.3; } 100% { opacity: 1; } }
+    .ai-input-row { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+    .ai-input-row input { flex: 1; padding: 10px 14px; background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--foreground); font-size: 0.9rem; }
+    .ai-input-row button { padding: 10px 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; }
+    .ai-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .ai-suggestion { padding: 6px 12px; background: var(--secondary); border: 1px solid var(--border); border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+    .ai-suggestion:hover { background: #3f3f46; }
+
+    /* ===== MOOD TRACKER ===== */
+    .section-title { font-size: 1rem; font-weight: 700; margin: 20px 0 12px; display: flex; align-items: center; gap: 8px; }
+    .moods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .moods-grid .mood-card:nth-child(5) { grid-column: 1 / -1; }
+    .mood-card { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--card); border: 2px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.25s; }
+    .mood-card[data-mood="very-happy"] { --mood-color: #f472b6; }
+    .mood-card[data-mood="happy"] { --mood-color: #34d399; }
+    .mood-card[data-mood="neutral"] { --mood-color: #fbbf24; }
+    .mood-card[data-mood="sad"] { --mood-color: #60a5fa; }
+    .mood-card[data-mood="very-sad"] { --mood-color: #a78bfa; }
+    .mood-card:hover { border-color: var(--mood-color); transform: scale(1.03); }
+    .mood-card.selected { border-color: var(--mood-color); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
+    .mood-card.clicked { animation: bounce 0.4s ease; }
+    @keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .mood-emoji { font-size: 2.2rem; }
+    .mood-label { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
+    .mood-card.selected .mood-label { color: var(--mood-color); }
+    .message-box { min-height: 60px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 16px; text-align: center; }
+    .message-text { font-size: 0.9rem; font-weight: 500; opacity: 0; transition: opacity 0.3s; }
+    .message-text.visible { opacity: 1; }
+    .placeholder-text { color: var(--muted); font-size: 0.85rem; }
+    .timestamp { text-align: center; font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; }
+    .summary-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+    .summary-title { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .count-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+    .count-item:last-child { border-bottom: none; }
+    .count-num { font-weight: 600; color: var(--primary); }
+    .reset-btn { width: 100%; padding: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 500; background: var(--secondary); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; margin-bottom: 16px; }
+
+    /* ===== GAMES SECTION ===== */
+    .games-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .games-tab { padding: 10px 20px; background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); cursor: pointer; font-size: 0.9rem; }
+    .games-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .game-container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; }
+    #snakeCanvas, #cricketCanvas { display: block; margin: 0 auto; background: #0d0d0d; border-radius: var(--radius); }
+    .game-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .game-score { font-weight: 700; font-size: 1.1rem; }
+    .game-btn { padding: 8px 20px; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; }
+    .cricket-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+    .cricket-actions button { padding: 10px 16px; background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius); color: var(--foreground); cursor: pointer; font-size: 0.85rem; }
+    .cricket-actions button:hover { background: #3f3f46; }
+
+    /* ===== STATS / DATABASE DASHBOARD ===== */
+    .stats-dashboard { background: linear-gradient(180deg, #1e1b4b 0%, #0f0a1a 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin: 20px 0; }
+    .stats-dashboard h3 { font-size: 1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: rgba(255,255,255,0.05); border-radius: var(--radius); padding: 14px; text-align: center; }
+    .stat-card .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+    .stat-card .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .stats-chart { height: 100px; display: flex; align-items: flex-end; gap: 8px; margin: 16px 0; }
+    .stats-bar { flex: 1; background: var(--primary); border-radius: 4px; min-height: 4px; transition: height 0.3s; }
+    .stats-table { font-size: 0.8rem; }
+    .stats-table tr { border-bottom: 1px solid var(--border); }
+    .stats-table td { padding: 8px 0; }
+
+    /* ===== WIDGETS ===== */
+    .widget-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .widget { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+    .widget-title { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .widget-value { font-size: 1.1rem; font-weight: 600; }
+
+    .promo-card { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%); border-radius: var(--radius-lg); padding: 20px; margin: 16px 0; text-align: center; }
+    .promo-card h4 { font-size: 1.1rem; margin-bottom: 8px; }
+    .promo-card p { font-size: 0.85rem; color: rgba(255,255,255,0.8); margin-bottom: 16px; }
+    .promo-card .btn { width: auto; display: inline-block; padding: 10px 24px; }
+
+    .quote-box { background: var(--card); border-left: 4px solid var(--primary); border-radius: var(--radius); padding: 16px; margin: 16px 0; font-style: italic; font-size: 0.9rem; color: var(--muted); }
+
+    .notif-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin: 16px 0; }
+    .notif-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; gap: 10px; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+
+    .footer-links { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 24px 0; font-size: 0.8rem; color: var(--muted); }
+    .footer-links a { color: var(--muted); text-decoration: none; }
+    .footer-links a:hover { color: var(--foreground); }
+
+    /* ===== CAPTCHA ===== */
+    .captcha-box { background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 16px 0; display: flex; align-items: center; gap: 12px; }
+    .captcha-box input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .captcha-box label { font-size: 0.9rem; cursor: pointer; }
+
+    .cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); padding: 16px 24px; display: none; z-index: 1000; }
+    .cookie-banner.visible { display: block; }
+    .cookie-banner p { font-size: 0.875rem; color: var(--muted); margin-bottom: 12px; }
+    .cookie-banner .cookie-btns { display: flex; gap: 12px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 24px; }
+    .modal-overlay.visible { display: flex; }
+    .modal { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; max-width: 380px; width: 100%; }
+    .modal h3 { font-size: 1.25rem; margin-bottom: 12px; }
+    .modal p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px; }
+    .modal .modal-btns { display: flex; gap: 12px; }
+    .rate-stars { display: flex; gap: 8px; margin-bottom: 16px; font-size: 1.5rem; cursor: pointer; }
+    .rate-stars span { opacity: 0.4; }
+    .rate-stars span:hover, .rate-stars span.filled { opacity: 1; }
+    .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+    .confetti { position: absolute; width: 8px; height: 8px; border-radius: 2px; animation: confetti-fall 2s ease-out forwards; }
+    @keyframes confetti-fall { 0% { transform: translateY(-100vh) rotate(0); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+    .settings-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 400px; }
+    .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .settings-item:last-child { border-bottom: none; }
+    .toggle { width: 44px; height: 24px; background: var(--input); border-radius: 12px; position: relative; cursor: pointer; }
+    .toggle.on { background: var(--primary); }
+    .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+    .toggle.on::after { left: 23px; }
+
+    @media (min-width: 500px) { .moods-grid { grid-template-columns: repeat(3, 1fr); } .moods-grid .mood-card:nth-child(5) { grid-column: 2 / 3; } }
+  </style>
+</head>
+<body>
+  <!-- SPLASH -->
+  <div class="view" id="view-splash">
+    <div class="splash">
+      <h1>Mood Check</h1>
+      <div class="loader"><div class="loader-bar" id="loaderBar"></div></div>
+      <span class="status" id="splashStatus">Connecting to servers...</span>
+    </div>
+  </div>
+
+  <!-- LANDING -->
+  <div class="view" id="view-landing">
+    <div class="auth-card">
+      <div class="landing-hero">
+        <h1>Mood Check</h1>
+        <p>Track your daily wellness with our comprehensive mood analytics platform.</p>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="showView('login')">Sign In</button>
+        <button class="btn btn-secondary" onclick="showView('signup')">Create Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="view" id="view-login">
+    <div class="auth-card">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to continue to your mood dashboard.</p>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="loginEmail" placeholder="name@example.com" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <div class="captcha-box">
+          <input type="checkbox" id="loginCaptcha" required>
+          <label for="loginCaptcha">I'm not a robot</label>
+        </div>
+        <a class="link" onclick="showView('forgot')">Forgot password?</a>
+        <div class="form-footer">
+          <button type="button" class="btn btn-ghost" onclick="showView('landing')">Back</button>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SIGN UP -->
+  <div class="view" id="view-signup">
+    <div class="auth-card">
+      <h2>Create account</h2>
+      <p class="sub">Join our community of mindful users.</p>
+      <form onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label>Full name</label>
+          <input type="text" id="signupName" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="signupEmail" placeholder="name@example.com" required>
+        </div>
+        <div class="form-group">
+          <label>Phone number (optional)</label>
+          <input type="tel" id="signupPhone" placeholder="+1 234 567 8900">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="Min. 8 characters" required minlength="8">
+        </div>
+        <div class="form-group">
+          <label>Confirm password</label>
+          <input type="password" id="signupConfirm" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+          <label>How did you hear about us?</label>
+          <select id="signupReferral">
+            <option>Social media</option>
+            <option>Friend</option>
+            <option>Google</option>
+            <option>Advertisement</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="captcha-box">
+          <input type="checkbox" id="signupCaptcha" required>
+          <label for="signupCaptcha">I'm not a robot</label>
+        </div>
+        <div class="checkbox-group" style="margin-bottom: 20px;">
+          <input type="checkbox" id="signupTerms" required>
+          <label for="signupTerms" style="font-size: 0.875rem; font-weight: 400;">I agree to the <a class="link" onclick="showModal('terms')">Terms of Service</a> and <a class="link" onclick="showModal('privacy')">Privacy Policy</a></label>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-ghost" onclick="showView('landing')">Back</button>
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EMAIL VERIFY -->
+  <div class="view" id="view-verify">
+    <div class="auth-card verify-card">
+      <div class="icon">📧</div>
+      <h2>Verify your email</h2>
+      <p class="sub">We sent a 6-digit code to your email. Enter it below.</p>
+      <div class="code-input">
+        <input type="text" maxlength="1" id="code1" oninput="codeInput(1)">
+        <input type="text" maxlength="1" id="code2" oninput="codeInput(2)">
+        <input type="text" maxlength="1" id="code3" oninput="codeInput(3)">
+        <input type="text" maxlength="1" id="code4" oninput="codeInput(4)">
+        <input type="text" maxlength="1" id="code5" oninput="codeInput(5)">
+        <input type="text" maxlength="1" id="code6" oninput="codeInput(6)">
+      </div>
+      <button class="btn btn-primary" onclick="handleVerify()">Verify</button>
+    </div>
+  </div>
+
+  <!-- PROFILE SETUP -->
+  <div class="view" id="view-profile">
+    <div class="auth-card">
+      <h2>Complete your profile</h2>
+      <p class="sub">Choose an avatar and tell us about yourself.</p>
+      <div class="form-group">
+        <label>Choose avatar</label>
+        <div class="avatar-grid" id="avatarGrid"></div>
+      </div>
+      <div class="form-group">
+        <label>Bio (optional)</label>
+        <textarea id="profileBio" rows="3" placeholder="A few words about yourself..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="handleProfileDone()">Continue</button>
+    </div>
+  </div>
+
+  <!-- FORGOT -->
+  <div class="view" id="view-forgot">
+    <div class="auth-card">
+      <h2>Reset password</h2>
+      <p class="sub">Enter your email and we'll send you a reset link.</p>
+      <form onsubmit="handleForgot(event)">
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="forgotEmail" placeholder="name@example.com" required>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-ghost" onclick="showView('login')">Back</button>
+          <button type="submit" class="btn btn-primary">Send Reset Link</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ONBOARDING -->
+  <div class="view" id="view-onboarding">
+    <div class="onboarding">
+      <div class="onboarding-slide active" data-slide="0">
+        <div class="emoji">📊</div>
+        <h3>Track Your Moods</h3>
+        <p>Log how you're feeling throughout the day. Our advanced analytics will help you understand your emotional patterns.</p>
+      </div>
+      <div class="onboarding-slide" data-slide="1">
+        <div class="emoji">📈</div>
+        <h3>Insights & Trends</h3>
+        <p>View detailed reports and weekly summaries. Discover what influences your wellbeing.</p>
+      </div>
+      <div class="onboarding-slide" data-slide="2">
+        <div class="emoji">🎯</div>
+        <h3>Stay Consistent</h3>
+        <p>Build healthy habits with our reminder system and achievement badges.</p>
+      </div>
+      <div class="carousel-dots" id="carouselDots"></div>
+      <div class="carousel-nav">
+        <button class="btn btn-ghost" onclick="skipOnboarding()">Skip</button>
+        <button class="btn btn-primary" id="onboardingNext" onclick="nextOnboarding()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="view" id="view-app">
+    <nav class="app-nav">
+      <h1>Mood Check</h1>
+      <div class="nav-btns">
+        <button class="icon-btn" onclick="showView('settings')" title="Settings">⚙️</button>
+        <button class="icon-btn" onclick="showView('database')" title="Analytics">📊</button>
+        <button class="icon-btn" onclick="showRateModal()" title="Rate">⭐</button>
+        <button class="logout-btn" onclick="handleLogout()">Log out</button>
+      </div>
+    </nav>
+
+    <div class="app-wrapper">
+      <!-- TOP AD -->
+      <div class="ad-banner">
+        <span class="ad-badge">AD</span>
+        <div class="ad-text"><strong>🎁 50% OFF Premium — Limited Time!</strong><br><span>Unlock AI insights, unlimited mood history & ad-free experience</span></div>
+        <button class="ad-cta" onclick="alert('Redirecting to checkout...')">Upgrade Now</button>
+      </div>
+
+      <!-- WEATHER + QUOTE WIDGETS -->
+      <div class="widget-row">
+        <div class="widget">
+          <div class="widget-title">Weather</div>
+          <div class="widget-value">☀️ 72°F · Sunny</div>
+        </div>
+        <div class="widget">
+          <div class="widget-title">Daily Quote</div>
+          <div class="widget-value" id="dailyQuote">"Today is a good day to have a good day."</div>
+        </div>
+      </div>
+
+      <!-- MOOD TRACKER -->
+      <h2 class="section-title">😊 How are you feeling?</h2>
+      <div class="moods-grid">
+        <div class="mood-card" data-mood="very-happy"><span class="mood-emoji">😄</span><span class="mood-label">Very Happy</span></div>
+        <div class="mood-card" data-mood="happy"><span class="mood-emoji">🙂</span><span class="mood-label">Happy</span></div>
+        <div class="mood-card" data-mood="neutral"><span class="mood-emoji">😐</span><span class="mood-label">Neutral</span></div>
+        <div class="mood-card" data-mood="sad"><span class="mood-emoji">😔</span><span class="mood-label">Sad</span></div>
+        <div class="mood-card" data-mood="very-sad"><span class="mood-emoji">😭</span><span class="mood-label">Very Sad</span></div>
+      </div>
+
+      <div class="message-box">
+        <p class="message-text" id="messageText"></p>
+        <p class="placeholder-text" id="placeholderText">Select a mood above</p>
+      </div>
+      <p class="timestamp">Last mood: <span id="timestampValue">—</span></p>
+
+      <section class="summary-section">
+        <h2 class="summary-title">Today's Mood Stats</h2>
+        <div class="count-item"><span>😄 Very Happy</span><span class="count-num" data-mood="very-happy">0</span></div>
+        <div class="count-item"><span>🙂 Happy</span><span class="count-num" data-mood="happy">0</span></div>
+        <div class="count-item"><span>😐 Neutral</span><span class="count-num" data-mood="neutral">0</span></div>
+        <div class="count-item"><span>😔 Sad</span><span class="count-num" data-mood="sad">0</span></div>
+        <div class="count-item"><span>😭 Very Sad</span><span class="count-num" data-mood="very-sad">0</span></div>
+      </section>
+      <button class="reset-btn" id="resetBtn">Reset Today</button>
+
+      <!-- MID AD -->
+      <div class="ad-sidebar">
+        <div class="ad-label">Sponsored</div>
+        <div class="ad-title">CalmApp — Sleep & Meditation</div>
+        <div class="ad-desc">Fall asleep in 5 minutes. Try 7 days free.</div>
+        <button class="ad-btn" onclick="alert('Opening CalmApp...')">Download Now</button>
+      </div>
+
+      <!-- GAMES -->
+      <h2 class="section-title">🎮 Mini Games</h2>
+      <div class="games-tabs">
+        <button class="games-tab active" onclick="switchGame('snake')">🐍 Snake</button>
+        <button class="games-tab" onclick="switchGame('cricket')">🏏 Cricket</button>
+      </div>
+
+      <div class="game-container" id="gameSnake">
+        <div class="game-controls">
+          <span class="game-score">Score: <span id="snakeScore">0</span> · High: <span id="snakeHigh">0</span></span>
+          <button class="game-btn" onclick="snakeStart()">Start</button>
+        </div>
+        <canvas id="snakeCanvas" width="320" height="240"></canvas>
+        <div class="cricket-actions" style="margin-top:12px">
+          <button onclick="snakeDir('up')">▲ Up</button>
+          <button onclick="snakeDir('left')">◀ Left</button>
+          <button onclick="snakeDir('down')">▼ Down</button>
+          <button onclick="snakeDir('right')">▶ Right</button>
+        </div>
+      </div>
+
+      <div class="game-container" id="gameCricket" style="display:none">
+        <div class="game-controls">
+          <span class="game-score">Runs: <span id="cricketRuns">0</span> | Wickets: <span id="cricketWickets">0</span> | Balls: <span id="cricketBalls">0</span></span>
+          <button class="game-btn" onclick="cricketStart()">New Game</button>
+        </div>
+        <canvas id="cricketCanvas" width="320" height="180"></canvas>
+        <div class="cricket-actions">
+          <button onclick="cricketBowl(0)">Defend</button>
+          <button onclick="cricketBowl(1)">1 Run</button>
+          <button onclick="cricketBowl(2)">2 Runs</button>
+          <button onclick="cricketBowl(4)">Four!</button>
+          <button onclick="cricketBowl(6)">Six!</button>
+        </div>
+      </div>
+
+      <!-- PROMO -->
+      <div class="promo-card">
+        <h4>⭐ Get the Mood Check App</h4>
+        <p>Track moods on the go! Available on iOS & Android.</p>
+        <button class="btn btn-primary" onclick="alert('Opening store...')">Download</button>
+      </div>
+
+      <!-- STATS PREVIEW -->
+      <div class="stats-dashboard">
+        <h3>📈 Community Stats (Live)</h3>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value" id="statMoods">0</div><div class="stat-label">Mood Logs Today</div></div>
+          <div class="stat-card"><div class="stat-value" id="statGames">0</div><div class="stat-label">Games Played</div></div>
+        </div>
+        <a class="link" onclick="showView('database')" style="display:block;text-align:center;margin-top:8px">View Full Analytics →</a>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="notif-panel">
+        <h3 class="section-title">🔔 Notifications</h3>
+        <div class="notif-item"><span class="dot"></span> 3 people logged "Very Happy" in the last hour</div>
+        <div class="notif-item"><span class="dot"></span> Your 7-day streak is ready to view</div>
+        <div class="notif-item"><span class="dot"></span> New feature: AI Mood Assistant is live!</div>
+      </div>
+
+      <!-- ANOTHER AD -->
+      <div class="ad-sidebar">
+        <div class="ad-label">Recommended</div>
+        <div class="ad-title">SleepTracker Pro</div>
+        <div class="ad-desc">Understand your sleep patterns. 30% off today.</div>
+        <button class="ad-btn" onclick="alert('Opening SleepTracker...')">Learn More</button>
+      </div>
+
+      <div class="footer-links">
+        <a href="#">About</a><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a><a href="#">Help</a><a href="#">Careers</a>
+      </div>
+    </div>
+
+    <!-- AI ASSISTANT FAB -->
+    <button class="ai-fab" onclick="toggleAIPanel()" title="AI Assistant">🤖<span style="position:absolute;top:-4px;right:-4px;background:#22c55e;color:#000;font-size:0.6rem;padding:2px 5px;border-radius:8px;font-weight:700">AI</span></button>
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-panel-header">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-info"><div class="ai-name">MoodAI Assistant</div><div class="ai-status">● Online</div></div>
+        <button class="ai-close" onclick="toggleAIPanel()">✕</button>
+      </div>
+      <div class="ai-chat" id="aiChat"></div>
+      <div class="ai-input-row">
+        <input type="text" id="aiInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+        <button onclick="sendAIMessage()">Send</button>
+      </div>
+      <div style="padding:8px 16px;border-top:1px solid var(--border)">
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px">Suggested:</div>
+        <div class="ai-suggestions">
+          <span class="ai-suggestion" onclick="aiQuickMessage('How can I feel better?')">How can I feel better?</span>
+          <span class="ai-suggestion" onclick="aiQuickMessage('What does my mood mean?')">What does my mood mean?</span>
+          <span class="ai-suggestion" onclick="aiQuickMessage('Tell me a joke')">Tell me a joke</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATABASE / ANALYTICS VIEW -->
+  <div class="view" id="view-database">
+    <div class="auth-card" style="max-width:500px">
+      <h2>📊 Analytics Dashboard</h2>
+      <p class="sub">Real-time usage statistics</p>
+      <div class="stats-grid" style="margin:20px 0">
+        <div class="stat-card"><div class="stat-value" id="dbMoods">0</div><div class="stat-label">Total Mood Logs</div></div>
+        <div class="stat-card"><div class="stat-value" id="dbSnake">0</div><div class="stat-label">Snake Games Played</div></div>
+        <div class="stat-card"><div class="stat-value" id="dbCricket">0</div><div class="stat-label">Cricket Games Played</div></div>
+        <div class="stat-card"><div class="stat-value" id="dbUsers">—</div><div class="stat-label">Live Users</div></div>
+      </div>
+      <div class="stats-dashboard">
+        <h3>Mood Distribution (Last 7 Days)</h3>
+        <div class="stats-chart" id="moodChart"></div>
+      </div>
+      <button class="btn btn-secondary" style="margin-top:16px;width:100%" onclick="showView('app')">Back to App</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="settings-card">
+      <h2>Settings</h2>
+      <div class="settings-item"><span>Email notifications</span><div class="toggle" onclick="toggleSetting(this)"></div></div>
+      <div class="settings-item"><span>Weekly digest</span><div class="toggle" onclick="toggleSetting(this)"></div></div>
+      <div class="settings-item"><span>Dark mode</span><div class="toggle on" onclick="toggleSetting(this)"></div></div>
+      <div class="settings-item"><span>Share analytics</span><div class="toggle" onclick="toggleSetting(this)"></div></div>
+      <button class="btn btn-secondary" style="margin-top:24px;width:100%" onclick="showView('app')">Back</button>
+    </div>
+  </div>
+
+  <!-- COOKIE -->
+  <div class="cookie-banner" id="cookieBanner">
+    <p>We use cookies. <a class="link" onclick="showModal('privacy')">Learn more</a></p>
+    <div class="cookie-btns"><button class="btn btn-secondary" onclick="acceptCookies()">Accept</button><button class="btn btn-ghost" onclick="rejectCookies()">Reject</button></div>
+  </div>
+
+  <!-- MODALS -->
+  <div class="modal-overlay" id="modal-terms" onclick="if(event.target===this)hideModal('terms')"><div class="modal"><h3>Terms of Service</h3><p>By using Mood Check, you agree to our terms. We may collect mood data. We reserve the right to update these terms at any time.</p><button class="btn btn-secondary" onclick="hideModal('terms')">Close</button></div></div>
+  <div class="modal-overlay" id="modal-privacy" onclick="if(event.target===this)hideModal('privacy')"><div class="modal"><h3>Privacy Policy</h3><p>We value your privacy. Your mood data is used only to provide insights. We do not sell your data.</p><button class="btn btn-secondary" onclick="hideModal('privacy')">Close</button></div></div>
+  <div class="modal-overlay" id="modal-newsletter" onclick="if(event.target===this)hideModal('newsletter')"><div class="modal"><h3>Stay in the loop ✨</h3><p>Get weekly wellness tips!</p><input type="email" id="newsletterEmail" placeholder="your@email.com" style="width:100%;padding:10px;margin-bottom:16px;background:var(--input);border:1px solid var(--border);border-radius:var(--radius)"><div class="modal-btns"><button class="btn btn-ghost" onclick="hideModal('newsletter')">No thanks</button><button class="btn btn-primary" onclick="subscribeNewsletter()">Subscribe</button></div></div></div>
+  <div class="modal-overlay" id="modal-rate" onclick="if(event.target===this)hideModal('rate')"><div class="modal"><h3>How are we doing?</h3><p>Rate your experience!</p><div class="rate-stars" id="rateStars"><span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span></div><div class="modal-btns"><button class="btn btn-ghost" onclick="hideModal('rate')">Later</button><button class="btn btn-primary" id="rateSubmit" onclick="submitRating()" disabled>Submit</button></div></div></div>
+  <div class="modal-overlay" id="modal-refer" onclick="if(event.target===this)hideModal('refer')"><div class="modal"><h3>🎁 Refer a Friend!</h3><p>Give 1 month free Premium to a friend and get 1 week free for yourself!</p><div class="form-group"><input type="email" id="referEmail" placeholder="Friend's email"></div><div class="modal-btns"><button class="btn btn-ghost" onclick="hideModal('refer')">Maybe later</button><button class="btn btn-primary" onclick="hideModal('refer'); alert('Invite sent!');">Send Invite</button></div></div></div>
+
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <script>
+    // ===== DB / PERSISTENCE =====
+    function getDB() {
+      let db = localStorage.getItem('moodCheckDB');
+      if (!db) db = JSON.stringify({ moods: 0, snake: 0, cricket: 0, snakeHigh: 0 });
+      return JSON.parse(db);
+    }
+    function saveDB(o) { localStorage.setItem('moodCheckDB', JSON.stringify(o)); }
+    function incDB(key) { let d = getDB(); d[key] = (d[key]||0) + 1; saveDB(d); updateStats(); }
+
+    function updateStats() {
+      const d = getDB();
+      const moodsEl = document.getElementById('statMoods'); if (moodsEl) moodsEl.textContent = d.moods || 0;
+      const dbMoodsEl = document.getElementById('dbMoods'); if (dbMoodsEl) dbMoodsEl.textContent = d.moods || 0;
+      const statGamesEl = document.getElementById('statGames'); if (statGamesEl) statGamesEl.textContent = (d.snake||0) + (d.cricket||0);
+      const dbSnakeEl = document.getElementById('dbSnake'); if (dbSnakeEl) dbSnakeEl.textContent = d.snake || 0;
+      const dbCricketEl = document.getElementById('dbCricket'); if (dbCricketEl) dbCricketEl.textContent = d.cricket || 0;
+    }
+
+    // ===== SPLASH =====
+    setTimeout(() => {
+      showView('splash');
+      const bar = document.getElementById('loaderBar');
+      const status = document.getElementById('splashStatus');
+      const msgs = ['Connecting to servers...', 'Loading preferences...', 'Syncing data...', 'Almost there...'];
+      let p = 0;
+      const iv = setInterval(() => {
+        p += 10; bar.style.width = p + '%';
+        status.textContent = msgs[Math.min(Math.floor(p/30), 3)];
+        if (p >= 100) { clearInterval(iv); showView('landing'); }
+      }, 150);
+    }, 500);
+
+    // ===== VIEW =====
+    function showView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      const el = document.getElementById('view-' + viewId);
+      if (el) el.classList.add('active');
+      if (viewId === 'database') { updateStats(); renderMoodChart(); const u = document.getElementById('dbUsers'); if (u) u.textContent = Math.floor(12 + Math.random() * 88); }
+    }
+
+    // ===== AUTH FLOW =====
+    function handleLogin(e) { e.preventDefault(); showView('verify'); initVerify(); }
+    function handleSignup(e) {
+      e.preventDefault();
+      const pw = document.getElementById('signupPassword').value;
+      const confirm = document.getElementById('signupConfirm').value;
+      if (pw !== confirm) { alert('Passwords do not match'); return; }
+      showView('verify'); initVerify();
+    }
+    function handleForgot(e) { e.preventDefault(); alert('Reset link sent!'); showView('login'); }
+
+    function codeInput(n) {
+      const inp = document.getElementById('code'+n);
+      if (inp.value.length === 1 && n < 6) document.getElementById('code'+(n+1)).focus();
+    }
+    function initVerify() {
+      for (let i = 1; i <= 6; i++) { const c = document.getElementById('code'+i); c.value = ''; c.focus(); }
+      document.getElementById('code1').focus();
+    }
+    function handleVerify() {
+      showView('profile');
+      const avatars = ['😀','😊','🤔','😴','🥳','😎','🤗','😇','🥰','🙂'];
+      const grid = document.getElementById('avatarGrid');
+      grid.innerHTML = '';
+      avatars.forEach((a,i) => {
+        const div = document.createElement('div');
+        div.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
+        div.textContent = a;
+        div.onclick = () => { grid.querySelectorAll('.avatar-opt').forEach(x => x.classList.remove('selected')); div.classList.add('selected'); };
+        grid.appendChild(div);
+      });
+    }
+    function handleProfileDone() { showView('onboarding'); initOnboarding(); }
+
+    // ===== ONBOARDING =====
+    let currentSlide = 0;
+    function initOnboarding() {
+      currentSlide = 0;
+      document.querySelectorAll('.onboarding-slide').forEach((s,i) => s.classList.toggle('active', i===0));
+      const dots = document.getElementById('carouselDots');
+      dots.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const d = document.createElement('div');
+        d.className = 'carousel-dot' + (i===0 ? ' active' : '');
+        d.onclick = () => goToSlide(i);
+        dots.appendChild(d);
+      }
+      document.getElementById('onboardingNext').textContent = 'Next';
+    }
+    function goToSlide(i) {
+      currentSlide = i;
+      document.querySelectorAll('.onboarding-slide').forEach((s,idx) => s.classList.toggle('active', idx===i));
+      document.querySelectorAll('.carousel-dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
+      document.getElementById('onboardingNext').textContent = i === 2 ? 'Get Started' : 'Next';
+    }
+    function nextOnboarding() {
+      if (currentSlide < 2) goToSlide(currentSlide + 1);
+      else finishOnboarding();
+    }
+    function skipOnboarding() { finishOnboarding(); }
+    function finishOnboarding() {
+      showView('app');
+      setTimeout(() => document.getElementById('cookieBanner').classList.add('visible'), 500);
+      setTimeout(() => { if (!sessionStorage.getItem('newsletterShown')) { showModal('newsletter'); sessionStorage.setItem('newsletterShown','1'); } }, 1500);
+      setTimeout(() => { if (!sessionStorage.getItem('referShown')) { showModal('refer'); sessionStorage.setItem('referShown','1'); } }, 8000);
+      updateStats();
+    }
+
+    function handleLogout() { showView('landing'); }
+
+    // ===== COOKIES / MODALS =====
+    function acceptCookies() { document.getElementById('cookieBanner').classList.remove('visible'); }
+    function rejectCookies() { document.getElementById('cookieBanner').classList.remove('visible'); }
+    function showModal(id) { document.getElementById('modal-'+id).classList.add('visible'); }
+    function hideModal(id) { document.getElementById('modal-'+id).classList.remove('visible'); }
+    function subscribeNewsletter() { const e = document.getElementById('newsletterEmail').value; if (e) alert('Thanks!'); hideModal('newsletter'); }
+
+    let selectedRating = 0;
+    function setRating(n) { selectedRating = n; document.querySelectorAll('#rateStars span').forEach((s,i) => s.classList.toggle('filled', i < n)); document.getElementById('rateSubmit').disabled = false; }
+    function showRateModal() { selectedRating = 0; document.querySelectorAll('#rateStars span').forEach(s => s.classList.remove('filled')); document.getElementById('rateSubmit').disabled = true; showModal('rate'); }
+    function submitRating() { alert('Thank you for your ' + selectedRating + '-star rating!'); hideModal('rate'); }
+
+    function toggleSetting(el) { el.classList.toggle('on'); }
+
+    // ===== AI ASSISTANT =====
+    let lastMood = '';
+    const aiResponses = {
+      'feel better': ['Try taking a short walk!', 'Listen to your favorite song.', 'Text a friend. Connection helps.'],
+      'mood mean': ['Your feelings are valid. Tracking helps you notice patterns.', 'Every mood teaches you something.'],
+      'joke': ['Why did the scarecrow win an award? He was outstanding in his field!', 'What do you call a fake noodle? An impasta!'],
+      'hello': ['Hey! How can I help you today?'],
+      'hi': ['Hi there! Ready to talk?'],
+      'sad': ['It\'s okay to feel this way. Tomorrow is a new day.'],
+      'happy': ['Love that for you! Keep riding that wave!'],
+      'default': ['I\'m here to help! Try asking "How can I feel better?" or "What does my mood mean?"']
+    };
+    function getAIResponse(msg) {
+      const m = msg.toLowerCase();
+      for (const [k, arr] of Object.entries(aiResponses)) {
+        if (m.includes(k)) return arr[Math.floor(Math.random()*arr.length)];
+      }
+      return aiResponses.default[0];
+    }
+    function toggleAIPanel() { document.getElementById('aiPanel').classList.toggle('open'); }
+    function aiQuickMessage(txt) { document.getElementById('aiInput').value = txt; sendAIMessage(); }
+    function sendAIMessage() {
+      const inp = document.getElementById('aiInput');
+      const txt = inp.value.trim();
+      if (!txt) return;
+      const chat = document.getElementById('aiChat');
+      const userDiv = document.createElement('div');
+      userDiv.className = 'ai-msg user';
+      userDiv.textContent = txt;
+      chat.appendChild(userDiv);
+      inp.value = '';
+      chat.scrollTop = chat.scrollHeight;
+
+      const botDiv = document.createElement('div');
+      botDiv.className = 'ai-msg bot';
+      botDiv.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+      chat.appendChild(botDiv);
+      chat.scrollTop = chat.scrollHeight;
+
+      setTimeout(() => {
+        botDiv.innerHTML = getAIResponse(txt);
+        chat.scrollTop = chat.scrollHeight;
+      }, 800 + Math.random() * 500);
+    }
+
+    // ===== MOOD TRACKER =====
+    const moodCounts = { 'very-happy': 0, 'happy': 0, 'neutral': 0, 'sad': 0, 'very-sad': 0 };
+    const moodMessages = {
+      'very-happy': ["OMG today is a main-character day!", "YAS bestie you're slaying!", "Vibes are IMMACULATE rn", "Peak happiness unlocked!"],
+      'happy': ["Good vibes only today!", "Love that for you!", "You're doing great bestie!", "Chill mood = best mood"],
+      'neutral': ["It's okay to just exist sometimes", "Resting face energy — valid", "Meh days happen", "Just vibing through the day"],
+      'sad': ["Sending virtual hugs", "Tomorrow's a new day bestie", "It's okay not to be okay", "This feeling will pass"],
+      'very-sad': ["It's okay bestie, tomorrow will be better", "Sending all the love your way", "You're stronger than you know", "We'll get through this together"]
+    };
+
+    const moodCards = document.querySelectorAll('.mood-card');
+    const messageText = document.getElementById('messageText');
+    const placeholderText = document.getElementById('placeholderText');
+    const timestampValue = document.getElementById('timestampValue');
+    const confettiContainer = document.getElementById('confettiContainer');
+
+    function getRandomMessage(mood) { const arr = moodMessages[mood]; return arr[Math.floor(Math.random()*arr.length)]; }
+    function updateCountDisplay() { for (const m in moodCounts) { const el = document.querySelector(`.count-num[data-mood="${m}"]`); if (el) el.textContent = moodCounts[m]; } }
+    function formatTime(d) { const h = d.getHours(), m = d.getMinutes(); return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+    const confettiColors = ['#f472b6','#34d399','#fbbf24','#60a5fa','#a78bfa','#fff'];
+    function triggerConfetti() {
+      for (let i = 0; i < 50; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random()*100+'%';
+        c.style.backgroundColor = confettiColors[Math.floor(Math.random()*confettiColors.length)];
+        c.style.animationDelay = Math.random()*0.3+'s';
+        c.style.animationDuration = (1.5+Math.random())+'s';
+        confettiContainer.appendChild(c);
+        setTimeout(() => c.remove(), 3500);
+      }
+    }
+
+    function handleMoodClick(mood) {
+      lastMood = mood;
+      moodCards.forEach(card => {
+        card.classList.remove('selected');
+        if (card.dataset.mood === mood) { card.classList.add('selected','clicked'); setTimeout(() => card.classList.remove('clicked'), 400); }
+      });
+      moodCounts[mood]++;
+      updateCountDisplay();
+      incDB('moods');
+      placeholderText.style.display = 'none';
+      messageText.textContent = getRandomMessage(mood);
+      messageText.classList.remove('visible');
+      void messageText.offsetWidth;
+      messageText.classList.add('visible');
+      timestampValue.textContent = formatTime(new Date());
+      if (mood === 'very-happy') triggerConfetti();
+    }
+
+    moodCards.forEach(card => {
+      card.addEventListener('click', () => handleMoodClick(card.dataset.mood));
+      card.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); handleMoodClick(card.dataset.mood); } });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      for (const m in moodCounts) moodCounts[m] = 0;
+      updateCountDisplay();
+      moodCards.forEach(c => c.classList.remove('selected'));
+      messageText.classList.remove('visible');
+      messageText.textContent = '';
+      placeholderText.style.display = 'block';
+      timestampValue.textContent = '—';
+    });
+
+    // ===== GAMES =====
+    function switchGame(g) {
+      document.querySelectorAll('.games-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('gameSnake').style.display = g === 'snake' ? 'block' : 'none';
+      document.getElementById('gameCricket').style.display = g === 'cricket' ? 'block' : 'none';
+    }
+
+    // SNAKE
+    const snakeCanvas = document.getElementById('snakeCanvas');
+    const snakeCtx = snakeCanvas.getContext('2d');
+    let snake = [], food = {}, dir = 'right', running = false, snakeScore = 0, snakeLoop;
+
+    const GRID = 16;
+    function snakeStart() {
+      if (running) return;
+      incDB('snake');
+      snake = [{x: 5, y: 5}];
+      dir = 'right';
+      food = { x: 10, y: 10 };
+      snakeScore = 0;
+      document.getElementById('snakeScore').textContent = '0';
+      const d = getDB();
+      document.getElementById('snakeHigh').textContent = d.snakeHigh || 0;
+      running = true;
+      snakeLoop = setInterval(snakeTick, 120);
+    }
+    function snakeTick() {
+      const head = { ...snake[0] };
+      if (dir === 'right') head.x++; else if (dir === 'left') head.x--; else if (dir === 'up') head.y--; else head.y++;
+      if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 15) { clearInterval(snakeLoop); running = false; snakeCtx.fillStyle='#0d0d0d'; snakeCtx.fillRect(0,0,snakeCanvas.width,snakeCanvas.height); snakeCtx.fillStyle='#ef4444'; snakeCtx.font='bold 24px Inter'; snakeCtx.fillText('GAME OVER', 80, 120); return; }
+      if (snake.some(s => s.x === head.x && s.y === head.y)) { clearInterval(snakeLoop); running = false; snakeCtx.fillStyle='#0d0d0d'; snakeCtx.fillRect(0,0,snakeCanvas.width,snakeCanvas.height); snakeCtx.fillStyle='#ef4444'; snakeCtx.font='bold 24px Inter'; snakeCtx.fillText('GAME OVER', 80, 120); return; }
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        snakeScore++;
+        document.getElementById('snakeScore').textContent = snakeScore;
+        const d = getDB(); if (snakeScore > (d.snakeHigh||0)) { d.snakeHigh = snakeScore; saveDB(d); }
+        document.getElementById('snakeHigh').textContent = d.snakeHigh;
+        food = { x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*15) };
+      } else snake.pop();
+
+      snakeCtx.fillStyle = '#0d0d0d';
+      snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+      snakeCtx.fillStyle = '#34d399';
+      snake.forEach(s => snakeCtx.fillRect(s.x*GRID, s.y*GRID, GRID-1, GRID-1));
+      snakeCtx.fillStyle = '#ef4444';
+      snakeCtx.fillRect(food.x*GRID, food.y*GRID, GRID-1, GRID-1);
+    }
+    function snakeDir(d) { if (!running) return; if (d==='up'&&dir!=='down') dir='up'; else if (d==='down'&&dir!=='up') dir='down'; else if (d==='left'&&dir!=='right') dir='left'; else if (d==='right'&&dir!=='left') dir='right'; }
+    document.addEventListener('keydown', e => {
+      if (!running) return;
+      if (e.key === 'ArrowUp' && dir !== 'down') dir = 'up';
+      else if (e.key === 'ArrowDown' && dir !== 'up') dir = 'down';
+      else if (e.key === 'ArrowLeft' && dir !== 'right') dir = 'left';
+      else if (e.key === 'ArrowRight' && dir !== 'left') dir = 'right';
+    });
+
+    // CRICKET
+    const cricketCanvas = document.getElementById('cricketCanvas');
+    const cricketCtx = cricketCanvas.getContext('2d');
+    let cricketRuns = 0, cricketWickets = 0, cricketBalls = 0, cricketActive = false;
+
+    function cricketStart() {
+      incDB('cricket');
+      cricketRuns = 0; cricketWickets = 0; cricketBalls = 0; cricketActive = true;
+      document.getElementById('cricketRuns').textContent = '0';
+      document.getElementById('cricketWickets').textContent = '0';
+      document.getElementById('cricketBalls').textContent = '0';
+      cricketDraw();
+    }
+    function cricketBowl(runs) {
+      if (!cricketActive) return;
+      cricketBalls++;
+      if (runs === 0 && Math.random() < 0.15) { cricketWickets++; }
+      else { cricketRuns += runs; }
+      document.getElementById('cricketRuns').textContent = cricketRuns;
+      document.getElementById('cricketWickets').textContent = cricketWickets;
+      document.getElementById('cricketBalls').textContent = cricketBalls;
+      cricketDraw();
+    }
+    function cricketDraw() {
+      cricketCtx.fillStyle = '#0d0d0d';
+      cricketCtx.fillRect(0, 0, cricketCanvas.width, cricketCanvas.height);
+      cricketCtx.fillStyle = '#fafafa';
+      cricketCtx.font = 'bold 24px Inter';
+      cricketCtx.fillText(cricketRuns + ' / ' + cricketWickets + ' (' + cricketBalls + ' balls)', 80, 90);
+    }
+
+    // ===== CHART =====
+    function renderMoodChart() {
+      const d = getDB();
+      const labels = ['Very Happy', 'Happy', 'Neutral', 'Sad', 'Very Sad'];
+      const vals = [(moodCounts['very-happy']||0)*3+5, (moodCounts['happy']||0)*3+8, (moodCounts['neutral']||0)*3+12, (moodCounts['sad']||0)*3+6, (moodCounts['very-sad']||0)*3+3];
+      const chart = document.getElementById('moodChart');
+      if (!chart) return;
+      chart.innerHTML = '';
+      const max = Math.max(...vals);
+      vals.forEach((v, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'stats-bar';
+        bar.style.height = (v / max * 80) + 'px';
+        bar.title = labels[i] + ': ' + v;
+        chart.appendChild(bar);
+      });
+    }
+
+    // Init AI welcome
+    setTimeout(() => {
+      const chat = document.getElementById('aiChat');
+      if (chat && chat.children.length === 0) {
+        const w = document.createElement('div');
+        w.className = 'ai-msg bot';
+        w.textContent = "Hey! I'm your MoodAI assistant. Ask me anything about your mood or how to feel better!";
+        chat.appendChild(w);
+      }
+    }, 1000);
+
+    // Daily quote rotation
+    const quotes = ['"Today is a good day to have a good day."', '"Your feelings are valid."', '"Progress, not perfection."', '"Be kind to yourself."', '"You are enough."'];
+    const qEl = document.getElementById('dailyQuote');
+    if (qEl) qEl.textContent = quotes[new Date().getDate() % quotes.length];
+  </script>
+</body>
+</html>
